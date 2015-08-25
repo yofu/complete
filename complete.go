@@ -208,89 +208,14 @@ func (c *Complete) Complete(val string) []string {
 }
 
 func (c *Complete) CompleteWord(val string) []string {
-	lis := strings.Split(val, " ")
-	pos := len(lis) - 1
-	v := lis[pos]
-	complete := func(word string, values []string, compf func(string) string) []string {
-		l := len(values)
-		switch l {
-		case 0:
-			return []string{lis[pos]}
-		case 1:
-			if strings.HasPrefix(values[0], "%g") {
-				if !strings.HasSuffix(word, "*") {
-					word += "*"
-				}
-				fs, err := filepath.Glob(filepath.Join(c.directory, word))
-				if err != nil {
-					return []string{lis[pos]}
-				}
-				rtn := make([]string, len(fs))
-				i := 0
-				for _, f := range fs {
-					rtn[i] = compf(f)
-					i++
-				}
-				return rtn[:i]
-			} else {
-				if strings.HasPrefix(values[0], word) {
-					return []string{values[0]}
-				} else {
-					return []string{lis[pos]}
-				}
-			}
-		default:
-			rtn := make([]string, l)
-			i := 0
-			for _, f := range values {
-				if strings.HasPrefix(f, word) {
-					rtn[i] = f
-					i++
-				}
-			}
-			return rtn[:i]
-		}
+	lis := c.Complete(val)
+	rtn := make([]string, len(lis))
+	sp := strings.Split(val, " ")
+	pos := len(sp) - 1
+	for i, s := range lis {
+		rtn[i] = strings.Split(s, " ")[pos]
 	}
-	if keywordarg.MatchString(v) { // keyword
-		fs := keywordarg.FindStringSubmatch(v)
-		if fs[3] != "" { // keyword: = or == is entred
-			key := fs[2]
-			var values []string
-			for k, v := range c.keyword {
-				if k == key {
-					values = v
-					break
-				}
-			}
-			if values == nil { // keyword: no keyword matched
-				return []string{lis[pos]}
-			}
-			pre := v[:strings.LastIndex(v, "=")+1]
-			return complete(fs[4], values, func(v string) string { return fmt.Sprintf("%s%s", pre, v) })
-		} else { // keyword: = nor == is not entred
-			key := strings.TrimLeft(v, "-")
-			rtn := make([]string, len(c.keyword))
-			i := 0
-			for k, _ := range c.keyword {
-				if strings.HasPrefix(k, key) {
-					rtn[i] = fmt.Sprintf("%s%s=", fs[1], k)
-					i++
-				}
-			}
-			return rtn[:i]
-		}
-	} else { // positional
-		cpos := pos
-		for _, s := range lis {
-			if keywordarg.MatchString(s) {
-				cpos--
-			}
-		}
-		if cpos >= len(c.positional) {
-			return []string{lis[pos]}
-		}
-		return complete(v, c.positional[cpos], func(v string) string { return v })
-	}
+	return rtn
 }
 
 func (c *Complete) Chdir(dir string) {
