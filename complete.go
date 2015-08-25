@@ -15,6 +15,7 @@ const (
 	UnknownKeyword
 	Keyword
 	FileName
+	OverSized
 )
 
 var (
@@ -199,6 +200,9 @@ func (c *Complete) Complete(val string) []string {
 				cpos--
 			}
 		}
+		if cpos >= len(c.positional) {
+			return []string{val}
+		}
 		return complete(v, c.positional[cpos], func(v string) string { return v })
 	}
 }
@@ -282,6 +286,9 @@ func (c *Complete) CompleteWord(val string) []string {
 				cpos--
 			}
 		}
+		if cpos >= len(c.positional) {
+			return []string{lis[pos]}
+		}
 		return complete(v, c.positional[cpos], func(v string) string { return v })
 	}
 }
@@ -332,6 +339,9 @@ func (c *Complete) Context(val string) Context {
 			if keywordarg.MatchString(s) {
 				cpos--
 			}
+		}
+		if cpos >= len(c.positional) {
+			return OverSized
 		}
 		return context(c.positional[cpos])
 	}
