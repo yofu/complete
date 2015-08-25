@@ -77,43 +77,10 @@ func Compile(val string, dict map[string][]string) (*Complete, error) {
 }
 
 func MustCompile(val string, dict map[string][]string) *Complete {
-	c := new(Complete)
-	c.keyword = make(map[string][]string)
-	lis := strings.Split(val, " ")
-	c.positional = make([][]string, len(lis))
-	addword := func(s string) []string {
-		if s == "_" {
-			return []string{}
-		} else if strings.HasPrefix(s, "$") {
-			key := strings.TrimPrefix(s, "$")
-			if d, ok := dict[key]; ok {
-				return d
-			} else {
-				panic(fmt.Sprintf("no key: %s", key))
-			}
-		} else {
-			return []string{s}
-		}
+	c, err := Compile(val, dict)
+	if err != nil {
+		panic(err.Error())
 	}
-	ind := 0
-	for _, s := range lis {
-		if keywordpat.MatchString(s) { // keyword
-			fs := keywordpat.FindStringSubmatch(s)
-			if fs[1] == "" {
-				panic(fmt.Sprintf("no keyword: %s", s))
-			}
-			if _, exist := c.keyword[fs[1]]; exist {
-				panic(fmt.Sprintf("key %s already exists", fs[1]))
-			}
-			ws := addword(fs[2])
-			c.keyword[fs[1]] = ws
-		} else { // positional
-			ws := addword(s)
-			c.positional[ind] = ws
-			ind++
-		}
-	}
-	c.positional = c.positional[:ind]
 	return c
 }
 
