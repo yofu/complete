@@ -112,7 +112,7 @@ func (c *Complete) Complete(val string) []string {
 				return rtn[:i]
 			} else {
 				if strings.HasPrefix(values[0], word) {
-					lis[pos] = values[0]
+					lis[pos] = compf(values[0])
 					return []string{strings.Join(lis, " ")}
 				} else {
 					return []string{val}
@@ -123,7 +123,7 @@ func (c *Complete) Complete(val string) []string {
 			i := 0
 			for _, f := range values {
 				if strings.HasPrefix(f, word) {
-					lis[pos] = f
+					lis[pos] = compf(f)
 					rtn[i] = strings.Join(lis, " ")
 					i++
 				}
