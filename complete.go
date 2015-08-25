@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	keywordpat = regexp.MustCompile("^[[]([a-zA-Z0-9]+):([$%a-zA-Z0-9.-_]+)[]]$")
+	keywordpat = regexp.MustCompile("^[[]([a-zA-Z0-9]+):([$%a-zA-Z0-9.-_]*)[]]$")
 	keywordarg = regexp.MustCompile("^(-{1,2})([a-zA-Z0-9]*)(={0,1})([^ =]*)$")
 )
 
@@ -50,7 +50,9 @@ func Compile(val string, dict map[string][]string) (*Complete, error) {
 	}
 	ind := 0
 	for _, s := range lis {
-		if keywordpat.MatchString(s) { // keyword
+		if s == "" {
+			continue
+		} else if keywordpat.MatchString(s) { // keyword
 			fs := keywordpat.FindStringSubmatch(s)
 			if fs[1] == "" {
 				return c, errors.New(fmt.Sprintf("no keyword: %s", s))
@@ -58,11 +60,15 @@ func Compile(val string, dict map[string][]string) (*Complete, error) {
 			if _, exist := c.keyword[fs[1]]; exist {
 				return c, errors.New(fmt.Sprintf("key %s already exists", fs[1]))
 			}
-			ws, err := addword(fs[2])
-			if err != nil {
-				return c, err
+			if fs[2] == "" {
+				c.keyword[fs[1]] = []string{}
+			} else {
+				ws, err := addword(fs[2])
+				if err != nil {
+					return c, err
+				}
+				c.keyword[fs[1]] = ws
 			}
-			c.keyword[fs[1]] = ws
 		} else { // positional
 			ws, err := addword(s)
 			if err != nil {
@@ -151,9 +157,13 @@ func (c *Complete) Complete(val string) []string {
 			key := strings.TrimLeft(v, "-")
 			rtn := make([]string, len(c.keyword))
 			i := 0
-			for k, _ := range c.keyword {
+			for k, v := range c.keyword {
 				if strings.HasPrefix(k, key) {
-					lis[pos] = fmt.Sprintf("%s%s=", fs[1], k)
+					if len(v) == 0 {
+						lis[pos] = fmt.Sprintf("%s%s", fs[1], k)
+					} else {
+						lis[pos] = fmt.Sprintf("%s%s=", fs[1], k)
+					}
 					rtn[i] = strings.Join(lis, " ")
 					i++
 				}
