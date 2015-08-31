@@ -27,6 +27,7 @@ type Complete struct {
 	directory  string
 	positional [][]string
 	keyword    map[string][]string
+	multiple   bool
 }
 
 func Compile(val string, dict map[string][]string) (*Complete, error) {
@@ -35,6 +36,13 @@ func Compile(val string, dict map[string][]string) (*Complete, error) {
 	lis := strings.Split(val, " ")
 	c.positional = make([][]string, len(lis))
 	addword := func(s string) ([]string, error) {
+		if strings.HasSuffix(s, "...") {
+			if c.multiple {
+				return nil, errors.New("cannot use multiple '...'")
+			}
+			c.multiple = true
+			s = strings.TrimSuffix(s, "...")
+		}
 		if s == "_" {
 			return []string{}, nil
 		} else if strings.HasPrefix(s, "$") {
@@ -178,7 +186,11 @@ func (c *Complete) Complete(val string) []string {
 			}
 		}
 		if cpos >= len(c.positional) {
-			return []string{val}
+			if c.multiple {
+				return complete(v, c.positional[len(c.positional)-1], func(v string) string { return v})
+			} else {
+				return []string{val}
+			}
 		}
 		return complete(v, c.positional[cpos], func(v string) string { return v })
 	}
