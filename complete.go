@@ -101,22 +101,32 @@ func MustCompile(val string, dict map[string][]string) *Complete {
 
 func (c *Complete) String() string {
 	var w bytes.Buffer
-	for _, l := range c.positional {
-		if len(l) == 1 {
+	for i, l := range c.positional {
+		switch len(l) {
+		case 0:
+			w.WriteString("_")
+		case 1:
 			if l[0] == "%g" {
-				w.WriteString("filename ")
+				w.WriteString("filename")
 			} else {
-				w.WriteString(l[0] + " ")
+				w.WriteString(l[0])
 			}
+		default:
+			w.WriteString("[" + l[0])
+			for _, s := range l[1:] {
+				w.WriteString("," + s)
+			}
+			w.WriteString("]")
+		}
+		if i != len(c.positional)-1 {
+			w.WriteString(" ")
 		} else {
-			w.WriteString("[")
-			for _, s := range l {
-				w.WriteString(s + ",")
+			if c.multiple {
+				w.WriteString("...")
 			}
-			w.WriteString("] ")
+			w.WriteString("\n")
 		}
 	}
-	w.WriteString("\n")
 	for k, v := range c.keyword {
 		switch len(v) {
 		case 0:
@@ -124,15 +134,15 @@ func (c *Complete) String() string {
 		case 1:
 			w.WriteString("    -" + k + "=")
 			if v[0] == "%g" {
-				w.WriteString("filename ")
+				w.WriteString("filename\n")
 			} else {
-				w.WriteString(v[0] + " ")
+				w.WriteString(v[0] + "\n")
 			}
 		default:
 			w.WriteString("    -" + k + "=")
-			w.WriteString("[")
-			for _, s := range v {
-				w.WriteString(s + ",")
+			w.WriteString("[" + v[0])
+			for _, s := range v[1:] {
+				w.WriteString("," + s)
 			}
 			w.WriteString("]\n")
 		}
