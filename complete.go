@@ -1,6 +1,7 @@
 package complete
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -96,6 +97,47 @@ func MustCompile(val string, dict map[string][]string) *Complete {
 		panic(err.Error())
 	}
 	return c
+}
+
+func (c *Complete) String() string {
+	var w bytes.Buffer
+	for _, l := range c.positional {
+		if len(l) == 1 {
+			if l[0] == "%g" {
+				w.WriteString("filename ")
+			} else {
+				w.WriteString(l[0] + " ")
+			}
+		} else {
+			w.WriteString("[")
+			for _, s := range l {
+				w.WriteString(s + ",")
+			}
+			w.WriteString("] ")
+		}
+	}
+	w.WriteString("\n")
+	for k, v := range c.keyword {
+		switch len(v) {
+		case 0:
+			w.WriteString("    -" + k + "\n")
+		case 1:
+			w.WriteString("    -" + k + "=")
+			if v[0] == "%g" {
+				w.WriteString("filename ")
+			} else {
+				w.WriteString(v[0] + " ")
+			}
+		default:
+			w.WriteString("    -" + k + "=")
+			w.WriteString("[")
+			for _, s := range v {
+				w.WriteString(s + ",")
+			}
+			w.WriteString("]\n")
+		}
+	}
+	return w.String()
 }
 
 func (c *Complete) Complete(val string) []string {
